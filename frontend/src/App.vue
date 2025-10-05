@@ -1,109 +1,95 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { computed } from 'vue';
+import { useChat } from './composables/useChat.js';
 
-const conversations = ref([]);
-const userMessage = ref(''); // 1. ตัวแปรสำหรับเก็บข้อความที่ user พิมพ์
-const status = ref('Loading history...');
-const isLoading = ref(false);
+// นำเข้า Logic และ State ทั้งหมดจาก useChat.js
+const {
+  mainLayoutVisible,
+  aiResponse,
+  userInput,
+  status,
+  evaluationResult,
+  evaluationVisible,
+  isLoading,
+  currentQuestionNumber,
+  totalQuestions,
+  langConfig,
+  currentLanguage,
+  initializeApp,
+  handleTalkButtonClick,
+  restartLesson
+} = useChat();
 
-// 2. เปลี่ยน URL เป็น endpoint ใหม่สำหรับแชท
-const CHAT_API_URL = 'http://localhost:3000/api/chat'; 
-const HISTORY_API_URL = 'http://localhost:3000/api/conversations';
+// สร้าง computed property เพื่อให้ง่ายต่อการเข้าถึง UI text
+const ui = computed(() => langConfig[currentLanguage.value].ui);
 
-async function fetchConversations() {
-  // ... (โค้ดส่วนนี้เหมือนเดิม)
-  try {
-    const response = await axios.get(HISTORY_API_URL);
-    conversations.value = response.data;
-    status.value = 'Ready to talk.';
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    status.value = 'Could not load history.';
-  }
-}
+// หา path ของรูปภาพ
+const robbyImage = new URL('./assets/Mr_Robby_AI.gif', import.meta.url).href;
 
-// 3. อัปเดตฟังก์ชันการส่งข้อความ
-async function sendMessage() {
-  if (!userMessage.value.trim()) return; // ไม่ส่งถ้าเป็นข้อความว่าง
-
-  isLoading.value = true;
-  status.value = 'AI is thinking...';
-
-  try {
-    // 4. ส่งเฉพาะข้อความของ user ไปที่ /api/chat
-    await axios.post(CHAT_API_URL, {
-      message: userMessage.value 
-    });
-
-    userMessage.value = ''; // 5. ล้างช่อง input
-    await fetchConversations(); // 6. ดึงประวัติล่าสุดทั้งหมด (ซึ่งจะรวมคำตอบใหม่ไว้ด้วย)
-
-  } catch (error) {
-    console.error('Error sending message:', error);
-    status.value = 'Failed to get a response from AI.';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-onMounted(() => {
-  fetchConversations();
-});
 </script>
 
 <template>
-  <main class="main-container">
-    <div class="history-box">
-      <h3>Conversation History</h3>
-      <ul v-if="conversations.length > 0">
-        <li v-for="convo in conversations" :key="convo._id">
-          <strong>You:</strong> {{ convo.userText }} <br/> <strong>AI:</strong> {{ convo.aiText }}
-        </li>
-      </ul>
-      <p v-else>No history yet.</p>
+  <div id="app-container">
+    <div id="language-selection-overlay" v-if="!mainLayoutVisible">
+      <div class="selection-box">
+        <h2>Please select a language<br>โปรดเลือกภาษา</h2>
+        <button id="select-th" @click="initializeApp('th-TH')">ภาษาไทย</button>
+        <button id="select-en" @click="initializeApp('en-US')">English</button>
+      </div>
     </div>
 
-    <form @submit.prevent="sendMessage" class="input-form">
-      <input
-        type="text"
-        v-model="userMessage"
-        placeholder="Ask something..."
-        :disabled="isLoading"
-      />
-      <button type="submit" :disabled="isLoading">
-        {{ isLoading ? '...' : 'Send' }}
-      </button>
-    </form>
-    <div id="status">{{ status }}</div>
-  </main>
+    <img src="https://app.braincloudlearning.com/img/cloud-blue.png" class="background-image" alt="Cloud pattern background" />
+
+    <div class="main-layout" v-if="mainLayoutVisible">
+      <div class="box box-a" id="boxA">
+        <div class="w-full flex flex-col items-center gap-2">
+          <img :src="robbyImage" alt="Robot talking" class="box-a-image" />
+          <div class="text-center text-sm font-semibold mt-2">Mr. Robby AI</div>
+          <hr class="w-full my-2 border-t border-gray-300">
+          <span class="text-base font-semibold text-white">Questions</span>
+          <div class="flex flex-col gap-2">
+            <div v-for="n in totalQuestions" :key="n" :id="`q-box-${n}`"
+              class="progress-box w-10 h-10 rounded-full bg-white text-gray-800 font-bold flex items-center justify-center question-number-dot"
+              :class="{ 'completed': n < currentQuestionNumber, 'active': n === currentQuestionNumber }">
+              {{ n }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-section">
+        <div class="box-b">
+          BC 4.1 Topic 2: What time is it?
+          <div class="box-b-upper">
+            <div id="ai-response" class="message" :class="{ 'ai-speaking': isLoading && status === ui.aiIsSpeaking }" v-show="!evaluationVisible" v-html="aiResponse.replace(/\n/g, '<br>')"></div>
+            <div id="evaluation-box" v-show="evaluationVisible" :class="{ 'visible': evaluationVisible }">
+               <h3>{{ ui.evaluationResultTitle }}</h3>
+               <p v-html="evaluationResult.replace(/\n/g, '<br>')"></p>
+            </div>
+            <div class="Control-AI w-full items-center justify-center gap-4 px-4 mt-4 mb-4" v-show="!evaluationVisible">
+              <div id="user-input" class="message user-message" :class="{ 'listening': isLoading && status === ui.listening }">{{ userInput }}</div>
+            </div>
+          </div>
+          <center>
+            <div id="status">{{ status }}</div>
+            <button v-if="!evaluationVisible" id="talk-button" @click="handleTalkButtonClick" :disabled="isLoading">
+              {{ isLoading ? ui.pleaseWait : ui.pushToTalk }}
+            </button>
+            <button v-if="evaluationVisible" id="finish-button" @click="restartLesson">
+              {{ ui.tryAgain }}
+            </button>
+          </center>
+        </div>
+      </div>
+    </div>
+
+    <footer id="page-footer">
+      © 2025 Braincloud Learning Inc. All rights reserved.
+    </footer>
+  </div>
 </template>
 
-<style scoped>
-  /* ... (CSS ส่วนใหญ่เหมือนเดิม) ... */
-  .input-form {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-  }
-  .input-form input {
-    flex-grow: 1;
-    padding: 10px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-  }
-  .input-form button {
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: none;
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  .input-form button:disabled {
-    background-color: #cccccc;
-  }
-  .main-container, .history-box, .history-box li { /* ... CSS เดิม ... */ }
+<style>
+/* นำเข้า CSS จากไฟล์ภายนอก */
+@import './styles/main.css';
 </style>
