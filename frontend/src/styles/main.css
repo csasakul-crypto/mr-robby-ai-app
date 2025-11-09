@@ -1,22 +1,20 @@
-/* --- Base Layout & Background --- */
-html,
-body {
-    overflow-x: hidden; /* ป้องกันการเลื่อนแนวนอน */
-    /* **NEW** Apply overflow hidden to html as well for robust scroll prevention */
+/* --- VVV (แก้ไข) --- */
+/* Style นี้จะถูกใช้ "เฉพาะ" ใน Launcher.vue และ ChatView.vue
+  โดยจะไม่ไปรบกวน CoreUI Layout
+*/
+.legacy-layout {
+  background-color: #3ba3d0;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  color: #fff;
+  position: relative;
+  overflow-y: hidden; 
+  overflow-x: hidden;
 }
+/* --- ^^^ --------- ^^^ --- */
 
-
-body {
-    background-color: #3ba3d0;
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    color: #fff;
-    position: relative;
-    overflow-y: hidden; /* <--- แก้ไขหรือเพิ่มบรรทัดนี้ */
-    overflow-x: hidden;
-}
 
 /* --- NEW: Language Selection Overlay --- */
 #language-selection-overlay {
@@ -32,7 +30,6 @@ body {
     z-index: 100;
     color: #333;
 }
-
 .selection-box {
     background-color: white;
     padding: 2rem 3rem;
@@ -40,13 +37,11 @@ body {
     text-align: center;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
-
 .selection-box h2 {
     margin-top: 0;
     margin-bottom: 1.5rem;
     font-size: 1.5rem;
 }
-
 .selection-box button {
     background-color: #4CAF50;
     color: white;
@@ -58,7 +53,6 @@ body {
     margin: 0 0.5rem;
     transition: background-color 0.3s;
 }
-
 .selection-box button:hover {
     background-color: #45a049;
 }
@@ -80,15 +74,13 @@ body {
     min-height: 100vh;
     display: flex;
     padding: 5%;
-    /* Adjusted default padding */
     padding-left: 10%;
     padding-right: 10%;
     gap: 1rem;
     box-sizing: border-box;
     position: relative;
     z-index: 1;
-    align-items: stretch;
-    /* Make columns equal height */
+    align-items: stretch; 
 }
 
 /* --- General Box Styling --- */
@@ -103,6 +95,7 @@ body {
     padding: 1.5rem;
 }
 
+/* ... (โค้ดที่เหลือของ .box-a, .box-b, .message, .progress-box ฯลฯ เหมือนเดิม) ... */
 /* --- Left Section (Box A) --- */
 .box-a {
     flex: 0 0 170px;
@@ -112,7 +105,6 @@ body {
     justify-content: flex-start;
     align-items: center;
 }
-
 .box-a-image {
     width: 140px;
     height: auto;
@@ -120,21 +112,16 @@ body {
     border-radius: 18px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
 /* --- Right Section --- */
 .right-section {
-    display: flex;
+    display: flex; 
     flex-direction: column;
     flex: 1;
-    /* Allow this section to grow */
     min-width: 0;
-    /* Important for flexbox shrinking */
 }
-
 .box-b {
     flex: 1;
     width: 100%;
-    /* Changed from fixed width to 100% */
     display: flex;
     flex-direction: column;
     position: relative;
@@ -144,61 +131,39 @@ body {
     padding: 1.5rem;
     justify-content: space-between;
 }
-
-
 .box-b-upper {
     flex: 1;
     width: 100%;
     border-radius: 20px;
-    /* The background-color below is overridden by the inline style in the HTML */
     background-color: rgba(255, 255, 255, 0.1);
     padding: 1.5rem;
     margin: 0;
     color: white;
-    /* Added for better text visibility on the blue background */
-    /* max-width: 800px; Added for better layout preview on wide screens */
     box-sizing: border-box;
-    /* Added styles for vertical positioning */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /* Pushes content to the bottom */
 }
-
 /* --- Question Progress Indicator --- */
 .question-number-dot {
     transition: all 0.3s ease-in-out;
     border-width: 2px;
     border-style: solid;
 }
-
 .progress-box.completed {
     border-color: #4CAF50;
-    /* Green */
     background-color: #e8f5e9;
     color: #2e7d32;
     animation: none;
-    /* Stop any active animation */
 }
-
 .question-number-dot.active {
     animation: pulse-border 1.5s infinite ease-in-out;
 }
-
 @keyframes pulse-border {
-    0% {
-        border-color: transparent;
-    }
-
-    50% {
-        border-color: #FFA500;
-    }
-
-    100% {
-        border-color: transparent;
-    }
+    0% { border-color: transparent; }
+    50% { border-color: #FFA500; }
+    100% { border-color: transparent; }
 }
-
 /* --- Conversation & Controls --- */
 .message {
     padding: 15px;
@@ -206,21 +171,16 @@ body {
     margin-bottom: 10px;
     text-align: center;
 }
-
 #ai-response {
     background-color: #e1f5fe;
     color: #000;
     max-height: 40vh;
-    /* Set a max height to prevent overflow */
     overflow-y: auto;
-    /* Allow scrolling */
 }
-
 #user-input {
     background-color: #c8e6c9;
     color: #000;
 }
-
 #talk-button {
     background-color: #4CAF50;
     color: white;
@@ -231,36 +191,35 @@ body {
     cursor: pointer;
     margin-top: 20px;
 }
-
 #talk-button:hover {
     background-color: #45a049;
 }
-
+#finish-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+#finish-button:hover {
+    background-color: #45a049;
+}
 #status {
     font-size: small;
     margin-top: 15px;
     color: #fff;
 }
-
-/* --- Blinking Effect for User Input Box --- */
 @keyframes blinking-effect {
-    0% {
-        background-color: #c8e6c9;
-    }
-
-    50% {
-        background-color: #e8f5e9;
-    }
-
-    100% {
-        background-color: #c8e6c9;
-    }
+    0% { background-color: #c8e6c9; }
+    50% { background-color: #e8f5e9; }
+    100% { background-color: #c8e6c9; }
 }
-
 .listening {
     animation: blinking-effect 2s infinite;
 }
-
 /* --- Evaluation Box --- */
 #evaluation-box {
     display: none;
@@ -274,183 +233,105 @@ body {
     text-align: left;
     transition: opacity 0.5s ease-in-out;
 }
-
 #evaluation-box.visible {
     display: block;
     opacity: 1;
 }
-
 #evaluation-box h3 {
     margin-top: 0;
     color: #2e7d32;
     border-bottom: 1px solid #a5d6a7;
     padding-bottom: 5px;
 }
-
-
-/* --- =================================== --- */
-/* ---      Responsive Adjustments       --- */
-/* --- =================================== --- */
-
-/* For Tablets and smaller desktops */
+/* --- Responsive Adjustments --- */
 @media (max-width: 1024px) {
-    .main-layout {
-        padding: 2rem;
-        /* Reduce padding */
-    }
-
-    .box-a {
-        flex-basis: 150px;
-        /* Make sidebar slightly smaller */
-    }
-
-    .box-a-image {
-        width: 120px;
-    }
+    .main-layout { padding: 2rem; }
+    .box-a { flex-basis: 150px; }
+    .box-a-image { width: 120px; }
 }
-
-
-/* For Mobile Phones */
 @media (max-width: 768px) {
     .main-layout {
         flex-direction: column;
-        /* Stack main sections vertically */
         padding: 1rem;
-        /* Further reduce padding for small screens */
         height: auto;
-        /* Allow layout to grow vertically */
     }
-
     .box-a {
         flex-basis: auto;
-        /* Allow sidebar to have auto height */
         width: 100%;
         flex-direction: column;
         align-items: center;
         gap: 1rem;
         padding: 1rem;
     }
-
-    .box-a-image {
-        width: 120px;
-        /* Adjust image size for mobile */
-    }
-
-    .box-a .text-center.font-semibold {
-        display: none;
-    }
-
-    .box-a .text-base {
-        display: none;
-    }
-
-    .box-a hr {
-        display: none;
-        /* Hide the divider line */
-    }
-
-    /* ** THIS IS THE CORRECTED RULE ** */
-    /* It now specifically targets only the container for the dots */
+    .box-a-image { width: 120px; }
+    .box-a .text-center.font-semibold { display: none; }
+    .box-a .text-base { display: none; }
+    .box-a hr { display: none; }
     .box-a>.w-full>.flex.flex-col {
         flex-direction: row !important;
         justify-content: center !important;
         width: 100%;
         gap: 0.75rem !important;
     }
-
-    #ai-response {
-        max-height: 50vh;
-        /* Give more vertical space for chat on mobile */
-    }
+    #ai-response { max-height: 50vh; }
 }
-
-
-
 @keyframes float-cloud {
-    0% {
-        transform: translateX(-50%) translateY(0);
-    }
-
-    50% {
-        transform: translateX(-50%) translateY(50px);
-        /* Moves the image 15px up */
-    }
-
-    100% {
-        transform: translateX(-50%) translateY(0);
-    }
+    0% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(50px); }
+    100% { transform: translateX(-50%) translateY(0); }
 }
-
-
-/* For Mobile Phones */
 @media (max-width: 768px) {
-
-    /* ... โค้ดสำหรับมือถือส่วนอื่นๆ ... */
-
-    /* **NEW** - Styles to make the background image larger on mobile */
     .background-image {
         width: 200%;
-        /* Make the image twice the screen width */
         max-width: 200%;
-        /* Allow it to be larger than the screen */
         bottom: -10%;
-        /* Adjust position to show more of the cloud */
     }
 }
-
-/* --- Blinking Effect for AI Response Box --- */
 @keyframes blinking-ai-response {
-    0% {
-        background-color: #e1f5fe;
-        /* Original light blue */
-    }
-
-    50% {
-        background-color: #b3e5fc;
-        /* A slightly darker, more noticeable light blue */
-    }
-
-    100% {
-        background-color: #e1f5fe;
-        /* Back to original light blue */
-    }
+    0% { background-color: #e1f5fe; }
+    50% { background-color: #b3e5fc; }
+    100% { background-color: #e1f5fe; }
 }
-
 .ai-speaking {
-    /* Apply the new background color animation at a SLOWER speed */
     animation: blinking-ai-response 2.5s infinite ease-in-out;
 }
-
 /* --- Page Footer --- */
 #page-footer {
     position: fixed;
-    bottom: 5px; /* Adjust to be closer to the bottom edge */
+    bottom: 5px; 
     left: 50%;
-    /* This is the default style for mobile (always centered) */
     transform: translateX(-50%);
     width: 100%;
     text-align: center;
     color: white;
     font-size: 12px;
     z-index: 5;
-    /* Add a shadow to make text visible on any background */
     text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
 }
-
-/* --- NEW: Media Query for Desktop/Tablet Screens --- */
 @media (min-width: 769px) {
     #page-footer {
-        /* On wide screens, we override the transform to shift the footer
-           to the center of the right content area. */
-        /* The calculation shifts it right by half of the left sidebar's width (170px / 2 = 85px)
-           and half of the gap's width (1rem / 2 = 0.5rem) */
         transform: translateX(calc(-50% + 85px + 0.5rem));
     }
 }
-
-/* เพิ่มโค้ดส่วนนี้เข้าไป */
 #talk-button:disabled {
-    background-color: #cccccc; /* เปลี่ยนสีพื้นหลังเป็นสีเทา */
-    color: #666666;           /* เปลี่ยนสีตัวอักษรเป็นเทาเข้ม */
-    cursor: not-allowed;       /* เปลี่ยน cursor เป็นเครื่องหมายห้าม */
+    background-color: #cccccc; 
+    color: #666666;
+    cursor: not-allowed;
+}
+/* --- "กดค้าง" --- */
+#talk-button.holding-wait {
+    background-color: #f0ad4e; 
+    transform: scale(1.02);
+    box-shadow: 0 0 15px #f0ad4e;
+}
+#talk-button.holding-ready {
+    background-color: #d9534f; 
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #d9534f;
+    animation: pulse-red 1.5s infinite;
+}
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 20px rgba(217, 83, 79, 0.7); }
+    50% { box-shadow: 0 0 30px rgba(217, 83, 79, 1); }
+    100% { box-shadow: 0 0 20px rgba(217, 83, 79, 0.7); }
 }

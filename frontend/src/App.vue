@@ -1,95 +1,149 @@
-<script setup>
-import { computed } from 'vue';
-import { useChat } from './composables/useChat.js';
-
-// นำเข้า Logic และ State ทั้งหมดจาก useChat.js
-const {
-  mainLayoutVisible,
-  aiResponse,
-  userInput,
-  status,
-  evaluationResult,
-  evaluationVisible,
-  isLoading,
-  currentQuestionNumber,
-  totalQuestions,
-  langConfig,
-  currentLanguage,
-  initializeApp,
-  handleTalkButtonClick,
-  restartLesson
-} = useChat();
-
-// สร้าง computed property เพื่อให้ง่ายต่อการเข้าถึง UI text
-const ui = computed(() => langConfig[currentLanguage.value].ui);
-
-// หา path ของรูปภาพ
-const robbyImage = new URL('./assets/Mr_Robby_AI.gif', import.meta.url).href;
-
-</script>
-
 <template>
-  <div id="app-container">
-    <div id="language-selection-overlay" v-if="!mainLayoutVisible">
-      <div class="selection-box">
-        <h2>Please select a language<br>โปรดเลือกภาษา</h2>
-        <button id="select-th" @click="initializeApp('th-TH')">ภาษาไทย</button>
-        <button id="select-en" @click="initializeApp('en-US')">English</button>
+  <!-- Admin Layout: ใช้เฉพาะหน้า /settings -->
+  <div v-if="isAdminRoute">
+    <CSidebar
+      position="fixed"
+      :visible="sidebarVisible"
+      @visible-change="(val) => (sidebarVisible = val)"
+    >
+      <AppSidebarNav :items="nav" />
+    </CSidebar>
+
+    <div class="wrapper d-flex flex-column min-vh-100 bg-light">
+      <CHeader position="sticky" class="mb-4 border-bottom">
+        <CHeaderToggler class="px-3" @click="toggleSidebar">
+          <span class="navbar-toggler-icon"></span>
+        </CHeaderToggler>
+
+        <CHeaderBrand class="mx-auto d-md-none fw-bold">
+          Mr. Robby Admin
+        </CHeaderBrand>
+
+        <CHeaderNav class="ms-auto me-3">
+          <CNavItem class="d-flex align-items-center">
+            <span
+              v-if="organizationLabel"
+              class="me-3 text-muted small"
+            >
+              {{ organizationLabel }}
+            </span>
+
+            <CDropdown variant="nav-item">
+              <CDropdownToggle
+                placement="bottom-end"
+                class="py-0 pe-0 d-flex align-items-center"
+              >
+                <CAvatar
+                  color="secondary"
+                  text-color="white"
+                  size="md"
+                  class="me-2"
+                >
+                  {{ userInitials }}
+                </CAvatar>
+                <span class="d-none d-md-inline fw-semibold">
+                  {{ username || 'Admin' }}
+                </span>
+              </CDropdownToggle>
+
+              <CDropdownMenu class="pt-0">
+                <CDropdownHeader class="bg-light fw-semibold py-2">
+                  Signed in as {{ username || 'Admin' }}
+                </CDropdownHeader>
+                <CDropdownItem @click="logout">
+                  Log out
+                </CDropdownItem>
+              </CDropdownMenu>
+            </CDropdown>
+          </CNavItem>
+        </CHeaderNav>
+      </CHeader>
+
+      <div class="body flex-grow-1 px-3">
+        <CContainer fluid>
+          <RouterView />
+        </CContainer>
       </div>
     </div>
+  </div>
 
-    <img src="https://app.braincloudlearning.com/img/cloud-blue.png" class="background-image" alt="Cloud pattern background" />
-
-    <div class="main-layout" v-if="mainLayoutVisible">
-      <div class="box box-a" id="boxA">
-        <div class="w-full flex flex-col items-center gap-2">
-          <img :src="robbyImage" alt="Robot talking" class="box-a-image" />
-          <div class="text-center text-sm font-semibold mt-2">Mr. Robby AI</div>
-          <hr class="w-full my-2 border-t border-gray-300">
-          <span class="text-base font-semibold text-white">Questions</span>
-          <div class="flex flex-col gap-2">
-            <div v-for="n in totalQuestions" :key="n" :id="`q-box-${n}`"
-              class="progress-box w-10 h-10 rounded-full bg-white text-gray-800 font-bold flex items-center justify-center question-number-dot"
-              :class="{ 'completed': n < currentQuestionNumber, 'active': n === currentQuestionNumber }">
-              {{ n }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="right-section">
-        <div class="box-b">
-          BC 4.1 Topic 2: What time is it?
-          <div class="box-b-upper">
-            <div id="ai-response" class="message" :class="{ 'ai-speaking': isLoading && status === ui.aiIsSpeaking }" v-show="!evaluationVisible" v-html="aiResponse.replace(/\n/g, '<br>')"></div>
-            <div id="evaluation-box" v-show="evaluationVisible" :class="{ 'visible': evaluationVisible }">
-               <h3>{{ ui.evaluationResultTitle }}</h3>
-               <p v-html="evaluationResult.replace(/\n/g, '<br>')"></p>
-            </div>
-            <div class="Control-AI w-full items-center justify-center gap-4 px-4 mt-4 mb-4" v-show="!evaluationVisible">
-              <div id="user-input" class="message user-message" :class="{ 'listening': isLoading && status === ui.listening }">{{ userInput }}</div>
-            </div>
-          </div>
-          <center>
-            <div id="status">{{ status }}</div>
-            <button v-if="!evaluationVisible" id="talk-button" @click="handleTalkButtonClick" :disabled="isLoading">
-              {{ isLoading ? ui.pleaseWait : ui.pushToTalk }}
-            </button>
-            <button v-if="evaluationVisible" id="finish-button" @click="restartLesson">
-              {{ ui.tryAgain }}
-            </button>
-          </center>
-        </div>
-      </div>
-    </div>
-
-    <footer id="page-footer">
-      © 2025 Braincloud Learning Inc. All rights reserved.
-    </footer>
+  <!-- Legacy Layout: หน้าเด็ก เช่น / และ /chat -->
+  <div v-else class="legacy-layout">
+    <RouterView />
   </div>
 </template>
 
+<script setup>
+import { ref, computed, inject } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  CContainer,
+  CSidebar,
+  CHeader,
+  CHeaderNav,
+  CHeaderToggler,
+  CHeaderBrand,
+  CAvatar,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownHeader,
+  CDropdownItem,
+  CNavItem,
+} from '@coreui/vue'
+
+import { nav } from '@/_nav'          // ✅ แก้เป็น named import
+import { AppSidebarNav } from '@/components/AppSidebarNav'
+
+const route = useRoute()
+const keycloak = inject('keycloak', null)
+
+const sidebarVisible = ref(true)
+
+const isAdminRoute = computed(() => route.path.startsWith('/settings'))
+
+const username = computed(() => {
+  if (!keycloak || !keycloak.tokenParsed) return ''
+  return (
+    keycloak.tokenParsed.preferred_username ||
+    keycloak.tokenParsed.name ||
+    ''
+  )
+})
+
+const organizationLabel = computed(() => {
+  if (!keycloak || !keycloak.tokenParsed) return ''
+  return (
+    keycloak.tokenParsed.organization ||
+    keycloak.tokenParsed.realm ||
+    ''
+  )
+})
+
+const userInitials = computed(() => {
+  if (!username.value) return 'U'
+  return username.value.charAt(0).toUpperCase()
+})
+
+const toggleSidebar = () => {
+  sidebarVisible.value = !sidebarVisible.value
+}
+
+const logout = () => {
+  if (keycloak) {
+    keycloak.logout({ redirectUri: window.location.origin })
+  }
+}
+</script>
+
 <style>
-/* นำเข้า CSS จากไฟล์ภายนอก */
-@import './styles/main.css';
+.wrapper {
+  margin-left: 0;
+}
+
+@media (min-width: 992px) {
+  .wrapper {
+    margin-left: 256px; /* ความกว้าง sidebar CoreUI มาตรฐาน */
+  }
+}
 </style>
