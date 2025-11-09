@@ -1,109 +1,149 @@
-<script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-
-const conversations = ref([]);
-const userMessage = ref(''); // 1. ตัวแปรสำหรับเก็บข้อความที่ user พิมพ์
-const status = ref('Loading history...');
-const isLoading = ref(false);
-
-// 2. เปลี่ยน URL เป็น endpoint ใหม่สำหรับแชท
-const CHAT_API_URL = 'http://localhost:3000/api/chat'; 
-const HISTORY_API_URL = 'http://localhost:3000/api/conversations';
-
-async function fetchConversations() {
-  // ... (โค้ดส่วนนี้เหมือนเดิม)
-  try {
-    const response = await axios.get(HISTORY_API_URL);
-    conversations.value = response.data;
-    status.value = 'Ready to talk.';
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    status.value = 'Could not load history.';
-  }
-}
-
-// 3. อัปเดตฟังก์ชันการส่งข้อความ
-async function sendMessage() {
-  if (!userMessage.value.trim()) return; // ไม่ส่งถ้าเป็นข้อความว่าง
-
-  isLoading.value = true;
-  status.value = 'AI is thinking...';
-
-  try {
-    // 4. ส่งเฉพาะข้อความของ user ไปที่ /api/chat
-    await axios.post(CHAT_API_URL, {
-      message: userMessage.value 
-    });
-
-    userMessage.value = ''; // 5. ล้างช่อง input
-    await fetchConversations(); // 6. ดึงประวัติล่าสุดทั้งหมด (ซึ่งจะรวมคำตอบใหม่ไว้ด้วย)
-
-  } catch (error) {
-    console.error('Error sending message:', error);
-    status.value = 'Failed to get a response from AI.';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-onMounted(() => {
-  fetchConversations();
-});
-</script>
-
 <template>
-  <main class="main-container">
-    <div class="history-box">
-      <h3>Conversation History</h3>
-      <ul v-if="conversations.length > 0">
-        <li v-for="convo in conversations" :key="convo._id">
-          <strong>You:</strong> {{ convo.userText }} <br/> <strong>AI:</strong> {{ convo.aiText }}
-        </li>
-      </ul>
-      <p v-else>No history yet.</p>
-    </div>
+  <!-- Admin Layout: ใช้เฉพาะหน้า /settings -->
+  <div v-if="isAdminRoute">
+    <CSidebar
+      position="fixed"
+      :visible="sidebarVisible"
+      @visible-change="(val) => (sidebarVisible = val)"
+    >
+      <AppSidebarNav :items="nav" />
+    </CSidebar>
 
-    <form @submit.prevent="sendMessage" class="input-form">
-      <input
-        type="text"
-        v-model="userMessage"
-        placeholder="Ask something..."
-        :disabled="isLoading"
-      />
-      <button type="submit" :disabled="isLoading">
-        {{ isLoading ? '...' : 'Send' }}
-      </button>
-    </form>
-    <div id="status">{{ status }}</div>
-  </main>
+    <div class="wrapper d-flex flex-column min-vh-100 bg-light">
+      <CHeader position="sticky" class="mb-4 border-bottom">
+        <CHeaderToggler class="px-3" @click="toggleSidebar">
+          <span class="navbar-toggler-icon"></span>
+        </CHeaderToggler>
+
+        <CHeaderBrand class="mx-auto d-md-none fw-bold">
+          Mr. Robby Admin
+        </CHeaderBrand>
+
+        <CHeaderNav class="ms-auto me-3">
+          <CNavItem class="d-flex align-items-center">
+            <span
+              v-if="organizationLabel"
+              class="me-3 text-muted small"
+            >
+              {{ organizationLabel }}
+            </span>
+
+            <CDropdown variant="nav-item">
+              <CDropdownToggle
+                placement="bottom-end"
+                class="py-0 pe-0 d-flex align-items-center"
+              >
+                <CAvatar
+                  color="secondary"
+                  text-color="white"
+                  size="md"
+                  class="me-2"
+                >
+                  {{ userInitials }}
+                </CAvatar>
+                <span class="d-none d-md-inline fw-semibold">
+                  {{ username || 'Admin' }}
+                </span>
+              </CDropdownToggle>
+
+              <CDropdownMenu class="pt-0">
+                <CDropdownHeader class="bg-light fw-semibold py-2">
+                  Signed in as {{ username || 'Admin' }}
+                </CDropdownHeader>
+                <CDropdownItem @click="logout">
+                  Log out
+                </CDropdownItem>
+              </CDropdownMenu>
+            </CDropdown>
+          </CNavItem>
+        </CHeaderNav>
+      </CHeader>
+
+      <div class="body flex-grow-1 px-3">
+        <CContainer fluid>
+          <RouterView />
+        </CContainer>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legacy Layout: หน้าเด็ก เช่น / และ /chat -->
+  <div v-else class="legacy-layout">
+    <RouterView />
+  </div>
 </template>
 
-<style scoped>
-  /* ... (CSS ส่วนใหญ่เหมือนเดิม) ... */
-  .input-form {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
+<script setup>
+import { ref, computed, inject } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  CContainer,
+  CSidebar,
+  CHeader,
+  CHeaderNav,
+  CHeaderToggler,
+  CHeaderBrand,
+  CAvatar,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownHeader,
+  CDropdownItem,
+  CNavItem,
+} from '@coreui/vue'
+
+import { nav } from '@/_nav'          // ✅ แก้เป็น named import
+import { AppSidebarNav } from '@/components/AppSidebarNav'
+
+const route = useRoute()
+const keycloak = inject('keycloak', null)
+
+const sidebarVisible = ref(true)
+
+const isAdminRoute = computed(() => route.path.startsWith('/settings'))
+
+const username = computed(() => {
+  if (!keycloak || !keycloak.tokenParsed) return ''
+  return (
+    keycloak.tokenParsed.preferred_username ||
+    keycloak.tokenParsed.name ||
+    ''
+  )
+})
+
+const organizationLabel = computed(() => {
+  if (!keycloak || !keycloak.tokenParsed) return ''
+  return (
+    keycloak.tokenParsed.organization ||
+    keycloak.tokenParsed.realm ||
+    ''
+  )
+})
+
+const userInitials = computed(() => {
+  if (!username.value) return 'U'
+  return username.value.charAt(0).toUpperCase()
+})
+
+const toggleSidebar = () => {
+  sidebarVisible.value = !sidebarVisible.value
+}
+
+const logout = () => {
+  if (keycloak) {
+    keycloak.logout({ redirectUri: window.location.origin })
   }
-  .input-form input {
-    flex-grow: 1;
-    padding: 10px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    font-size: 16px;
+}
+</script>
+
+<style>
+.wrapper {
+  margin-left: 0;
+}
+
+@media (min-width: 992px) {
+  .wrapper {
+    margin-left: 256px; /* ความกว้าง sidebar CoreUI มาตรฐาน */
   }
-  .input-form button {
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: none;
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  .input-form button:disabled {
-    background-color: #cccccc;
-  }
-  .main-container, .history-box, .history-box li { /* ... CSS เดิม ... */ }
+}
 </style>

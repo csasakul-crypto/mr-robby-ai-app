@@ -1,0 +1,65 @@
+services:
+  # --- Service 1: Backend API ---
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/mr_robby_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PORT=3000
+    depends_on:
+      - mongo
+    volumes:
+      - /usr/src/app/node_modules
+
+  # --- Service 2: Frontend (Nginx) ---
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  # --- Service 3: Database (Mongo) ---
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # --- Service 4: Keycloak ---
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KC_HEALTH_ENABLED=true
+      - KC_METRICS_ENABLED=true
+      - KC_HTTP_ENABLED=true
+
+      # --- VVV นี่คือส่วนที่แก้ไข ---
+      - KC_DB=dev-file # 1. เปลี่ยนจาก mongodb เป็น dev-file
+      # (เราลบ 4 บรรทัดของ KC_DB_URL_HOST ฯลฯ ออก)
+      # --- ^^^ ----------------- ^^^
+
+    command:
+      - start-dev
+    depends_on:
+      - mongo # (ยังคงต้องรอ mongo เพราะ backend ต้องใช้)
+    
+    # --- VVV เพิ่มส่วนนี้ ---
+    # 2. เพิ่ม Volume เพื่อเก็บข้อมูล (Realm/User) ของ Keycloak
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    # --- ^^^ ----------------- ^^^
+
+# --- บล็อก volumes: จะอยู่ล่างสุด ---
+volumes:
+  mongo-data: {}
+  # 3. ประกาศ Volume ใหม่สำหรับ Keycloak
+  keycloak-data: {}
